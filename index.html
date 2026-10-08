@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendPay Pro | Smart Attendance & Payroll System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb; --primary-dark: #1e40af; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b; --muted: #64748b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.08);
+            --shadow-xl: 0 20px 40px rgba(0,0,0,0.12);
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%); 
+            color: var(--text); 
+            font-size: 14px; 
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* ===== LOADING ANIMATIONS ===== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .loading-overlay.active { display: flex; }
+        
+        .loader-container {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            padding: 40px 50px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: fadeInUp 0.5s ease;
+            min-width: 320px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(37, 99, 235, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        .progress-bar-loader {
+            width: 250px;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px auto;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #60a5fa, #2563eb);
+            background-size: 200% 100%;
+            border-radius: 10px;
+            animation: progressMove 2s ease-in-out infinite;
+        }
+        
+        .dots-loader {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: dotBounce 1.4s infinite ease-in-out;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; background: #3b82f6; }
+        .dot:nth-child(3) { animation-delay: 0.4s; background: #60a5fa; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes progressMove { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; } 40% { transform: scale(1.2); opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        
+        /* ===== HEADER ===== */
+        .app-header { 
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+            color: #fff; 
+            padding: 0 30px;
+            height: 70px;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .logo-section { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 2rem; animation: float 3s ease-in-out infinite; }
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .version-badge { 
+            background: linear-gradient(135deg, #f59e0b, #d97706); 
+            color: #000; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 0.7rem; 
+            font-weight: 700;
+        }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        
+        /* ===== BUTTONS ===== */
+        .btn { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 8px; 
+            padding: 10px 20px; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            font-size: 0.82rem; 
+            cursor: pointer; 
+            border: none; 
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #2563eb, #1d4ed8); 
+            color: #fff; 
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+        .btn-primary:hover { 
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+            transform: translateY(-2px);
+        }
+        .btn-success { 
+            background: linear-gradient(135deg, #10b981, #059669); 
+            color: #fff; 
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-warning { 
+            background: linear-gradient(135deg, #f59e0b, #d97706); 
+            color: #fff; 
+        }
+        .btn-outline-light { 
+            background: rgba(255,255,255,0.1); 
+            border: 1.5px solid rgba(255,255,255,0.3); 
+            color: #fff;
+        }
+        .btn-outline-light:hover { background: rgba(255,255,255,0.2); }
+        .btn-sm { padding: 8px 16px; font-size: 0.75rem; border-radius: 8px; } 
+        .btn-xs { padding: 5px 12px; font-size: 0.7rem; border-radius: 6px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* ===== MAIN CONTAINER ===== */
+        .main-container { 
+            max-width: 1500px; 
+            margin: 0 auto; 
+            padding: 24px 20px; 
+        }
+        
+        /* ===== CARDS ===== */
+        .card { 
+            background: #ffffff;
+            border-radius: var(--radius-xl); 
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px; 
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card-header { 
+            padding: 16px 24px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-weight: 700; 
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9); 
+            font-size: 0.9rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        .card-header i { font-size: 1.1rem; color: var(--primary); }
+        .card-body { padding: 24px; }
+        
+        /* ===== CHARTS GRID ===== */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-container {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            height: 350px;
+        }
+        .chart-container h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-container canvas {
+            max-height: 280px;
+        }
+        
+        /* ===== INFO BOX ===== */
+        .info-box { 
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 1px solid #bfdbfe; 
+            border-radius: var(--radius-lg); 
+            padding: 14px 20px; 
+            margin-bottom: 20px; 
+            font-size: 0.8rem; 
+            display: flex; 
+            align-items: center;
+            gap: 12px; 
+            flex-wrap: wrap; 
+        }
+        
+        /* ===== UPLOAD SECTION ===== */
+        .upload-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 1000px) { .upload-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 650px) { .upload-grid { grid-template-columns: 1fr; } }
+        
+        .upload-box { 
+            border: 2px dashed #cbd5e1; 
+            border-radius: var(--radius-lg); 
+            padding: 24px 20px; 
+            text-align: center; 
+            position: relative; 
+            transition: all 0.3s ease; 
+            background: #fafbfc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .upload-box:hover { 
+            border-color: var(--primary); 
+            background: #eff6ff;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+        .upload-box.has-file { 
+            border-color: var(--success); 
+            background: #ecfdf5; 
+            border-style: solid; 
+        }
+        .upload-box .icon { font-size: 2.5rem; animation: float 3s ease-in-out infinite; }
+        .upload-box:nth-child(2) .icon { animation-delay: 0.5s; }
+        .upload-box:nth-child(3) .icon { animation-delay: 1s; }
+        .upload-box h4 { font-size: 0.95rem; font-weight: 700; }
+        .upload-box p { font-size: 0.72rem; color: var(--muted); margin: 0; }
+        .upload-box input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .file-name { 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            color: var(--success);
+            padding: 4px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 20px;
+        }
+        
+        .sample-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+        }
+        .sample-btn:hover { box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5); transform: translateY(-2px); }
+        
+        .process-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 8px 0;
+        }
+        .process-section label { font-weight: 700; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
+        .process-section select {
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        
+        /* ===== TABS ===== */
+        .tabs-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .tabs { 
+            display: flex; 
+            gap: 4px; 
+            background: #f1f5f9; 
+            padding: 5px; 
+            border-radius: 12px;
+        }
+        .tab { 
+            padding: 10px 24px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 0.82rem; 
+            border: none; 
+            background: transparent; 
+            color: var(--muted); 
+            border-radius: 9px; 
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tab.active { background: #fff; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .tab:hover:not(.active) { color: var(--primary); background: rgba(255,255,255,0.5); }
+        
+        /* ===== FILTER BAR ===== */
+        .filter-bar { 
+            display: flex; 
+            gap: 12px; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            padding: 14px 20px; 
+            background: #f8fafc;
+            border-radius: var(--radius-lg); 
+            border: 1px solid #e2e8f0;
+            margin-bottom: 16px; 
+        }
+        .filter-bar label { font-weight: 700; font-size: 0.78rem; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+        .filter-bar input, .filter-bar select { 
+            padding: 9px 14px; 
+            border-radius: 8px; 
+            border: 1px solid #cbd5e1; 
+            font-size: 0.78rem; 
+            font-family: inherit;
+            background: white;
+        }
+        .filter-bar input { min-width: 200px; }
+        .filter-bar input:focus, .filter-bar select:focus { 
+            border-color: var(--primary); 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); 
+        }
+        .filter-count { margin-left: auto; font-size: 0.75rem; color: var(--muted); font-weight: 500; }
+        
+        /* ===== TABLE ===== */
+        .table-wrapper { 
+            overflow-x: auto; 
+            max-height: 500px; 
+            overflow-y: auto; 
+            border-radius: var(--radius-md); 
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+        table thead { position: sticky; top: 0; z-index: 10; }
+        table th { 
+            background: linear-gradient(180deg, #1e293b, #334155); 
+            color: #fff; 
+            padding: 12px 10px; 
+            text-align: center; 
+            font-weight: 600; 
+            white-space: nowrap; 
+            font-size: 0.72rem; 
+        }
+        table td { 
+            padding: 10px 10px; 
+            border-bottom: 1px solid #f1f5f9; 
+            text-align: center; 
+            white-space: nowrap; 
+            font-size: 0.76rem;
+            vertical-align: middle;
+        }
+        table tbody tr { transition: all 0.2s ease; }
+        table tbody tr:nth-child(even) { background: #fafbfc; }
+        table tbody tr:hover { background: #f1f5f9; }
+        .num { text-align: right; font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; font-size: 0.75rem; font-weight: 500; }
+        .text-left { text-align: left; font-weight: 600; }
+        
+        .highlight-green { background: #d1fae5 !important; color: #065f46; font-weight: 600; }
+        .highlight-red { background: #fee2e2 !important; color: #991b1b; font-weight: 600; }
+        .highlight-yellow { background: #fef3c7 !important; color: #92400e; font-weight: 600; }
+        .highlight-blue { background: #dbeafe !important; color: #1e40af; font-weight: 600; }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+        .badge-present { background: #d1fae5; color: #065f46; } 
+        .badge-late { background: #fef3c7; color: #92400e; }
+        .badge-early { background: #dbeafe; color: #1e40af; } 
+        .badge-late-early { background: #fce7f3; color: #9d174d; }
+        .badge-absent { background: #fee2e2; color: #991b1b; } 
+        .badge-ambiguous { background: #fef3c7; color: #92400e; }
+        
+        .total-row td { font-weight: 700; background: #fef3c7 !important; border-top: 2px solid #f59e0b; font-size: 0.78rem; }
+        .grand-row td { font-weight: 700; background: #dbeafe !important; border-top: 3px solid #2563eb; font-size: 0.82rem; color: #1e40af; }
+        
+        /* ===== SUMMARY BOXES ===== */
+        .summary-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 16px; 
+            margin-bottom: 20px; 
+        }
+        .summary-box { 
+            position: relative; 
+            border-radius: var(--radius-lg); 
+            padding: 20px; 
+            color: #fff; 
+            overflow: hidden; 
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            cursor: default;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .summary-box:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+        .summary-box .sb-icon { position: absolute; right: 16px; top: 16px; font-size: 2.5rem; opacity: 0.2; }
+        .summary-box .sb-label { font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+        .summary-box .sb-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; }
+        .summary-box .sb-sub { font-size: 0.7rem; opacity: 0.8; }
+        .summary-box.blue { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+        .summary-box.red { background: linear-gradient(135deg, #991b1b, #ef4444); }
+        .summary-box.orange { background: linear-gradient(135deg, #c2410c, #f97316); }
+        .summary-box.green { background: linear-gradient(135deg, #065f46, #10b981); }
+        .summary-box.purple { background: linear-gradient(135deg, #5b21b6, #8b5cf6); }
+        .summary-box.teal { background: linear-gradient(135deg, #115e59, #14b8a6); }
+        
+        /* ===== EMPLOYEE PROFILE CARDS ===== */
+        .emp-avatar { 
+            width: 44px; height: 44px; border-radius: 50%; 
+            background: linear-gradient(135deg, #2563eb, #3b82f6); 
+            color: #fff; display: flex; align-items: center; justify-content: center; 
+            font-weight: 700; font-size: 1.1rem; flex-shrink: 0; 
+        }
+        .stat-card { 
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); 
+            padding: 10px 14px; text-align: center; min-width: 70px; transition: all 0.3s ease;
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); }
+        .stat-card .stat-value { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+        .stat-card .stat-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card.green { border-left: 3px solid #10b981; } 
+        .stat-card.red { border-left: 3px solid #ef4444; } 
+        .stat-card.yellow { border-left: 3px solid #f59e0b; } 
+        .stat-card.blue { border-left: 3px solid #3b82f6; } 
+        .stat-card.purple { border-left: 3px solid #8b5cf6; } 
+        .stat-card.orange { border-left: 3px solid #f97316; }
+        
+        .pending-badge { 
+            display: inline-flex; align-items: center; gap: 5px; 
+            background: #fef3c7; color: #92400e; padding: 5px 12px; 
+            border-radius: 20px; font-size: 0.7rem; font-weight: 700; 
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .ot-input, .enc-input { 
+            width: 75px; padding: 6px 8px; border-radius: 6px; 
+            border: 1px solid #cbd5e1; font-size: 0.72rem; text-align: right; 
+            font-family: 'SF Mono', 'Consolas', monospace; background: white;
+        }
+        
+        .emp-profile-card { 
+            background: #fff; border-radius: var(--radius-lg); margin-bottom: 10px; 
+            border: 1px solid #e2e8f0; overflow: hidden; box-shadow: var(--shadow-sm);
+        }
+        .emp-profile-header { 
+            padding: 14px 20px; display: flex; justify-content: space-between; 
+            align-items: center; cursor: pointer; background: #fafbfc; 
+            border-bottom: 1px solid #f1f5f9; gap: 16px; flex-wrap: wrap; 
+        }
+        .emp-profile-header:hover { background: #f1f5f9; }
+        .emp-profile-body { display: none; padding: 16px; animation: fadeIn 0.3s ease; }
+        .emp-profile-card.open .emp-profile-body { display: block; }
+        .emp-profile-card .arrow-icon { 
+            transition: transform 0.3s ease; font-size: 0.9rem;
+            width: 28px; height: 28px; display: flex; align-items: center; 
+            justify-content: center; background: #e2e8f0; border-radius: 50%; flex-shrink: 0;
+        }
+        .emp-profile-card.open .arrow-icon { transform: rotate(180deg); background: var(--primary); color: white; }
+        .emp-info-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .emp-stats-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        
+        @media print {
+            body { background: #fff; font-size: 12px; }
+            .no-print { display: none !important; }
+            .main-container { max-width: 100%; padding: 0; }
+            .card { box-shadow: none; border: 1px solid #000; margin-bottom: 8px; break-inside: avoid; }
+            .table-wrapper { max-height: none; overflow: visible; }
+            .highlight-green, .highlight-red, .highlight-yellow, .highlight-blue { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { size: landscape; margin: 8mm; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="app-header no-print">
+    <div class="logo-section">
+        <span class="logo-icon">📊</span>
+        <span class="app-title">Attend<span style="color:#fbbf24;">Pay</span> Pro</span>
+        <span class="version-badge">v7.0</span>
+    </div>
+        <div class="header-actions">
+        <button class="btn btn-outline-light btn-sm" onclick="showPolicy()"><i class="fas fa-shield-alt"></i> Privacy</button>
+        <button class="btn btn-warning btn-sm" onclick="printSalarySheet()"><i class="fas fa-print"></i> Print Salary</button>
+        <button class="btn btn-outline-light btn-sm" onclick="printDetailView()"><i class="fas fa-list"></i> Print Detail</button>
+        <button class="btn btn-outline-light btn-sm" onclick="exportSalarySheet()"><i class="fas fa-download"></i> Export CSV</button>
+    </div>
+</header>
+
+<div class="main-container">
+    
+    <div class="info-box no-print">
+        <i class="fas fa-calculator"></i>
+        <span><strong>Policy:</strong> Mon–Fri = 525 min | Sat = 240 min (Shortfall × Config Penalty) | Daily Salary = Gross ÷ 30 | Per Minute Rate = Daily Salary ÷ 480 | 480 min = 1 Leave | OT separate | <strong>Same shortage never charged twice</strong></span>
+    </div>
+
+    <div class="card no-print">
+        <div class="card-header"><i class="fas fa-cloud-upload-alt"></i> Upload Data Files</div>
+        <div class="card-body">
+            <div class="upload-grid">
+                <div class="upload-box" id="boxAtt">
+                    <div class="icon">📋</div>
+                    <h4>Attendance Data</h4>
+                    <p>AC-No, Name, Time, State, Exception</p>
+                    <input type="file" accept=".csv,.txt" onchange="handleUpload(this,'attendance')">
+                    <div class="file-name" id="fname-attendance"></div>
+                    <button class="sample-btn" onclick="downloadSample('attendance')"><i class="fas fa-download"></i> Sample File</button>
+                </div>
+                <div class="upload-box" id="boxCfg">
+                    <div class="icon">📅</div>
+                    <h4>Hours Configuration</h4>
+                    <p>date, start_time, required_hours, closing_time, penalty</p>
+                    <input type="file" accept=".csv,.txt" onchange="handleUpload(this,'config')">
+                    <div class="file-name" id="fname-config"></div>
+                    <button class="sample-btn" onclick="downloadSample('config')"><i class="fas fa-download"></i> Sample File</button>
+                </div>
+                <div class="upload-box" id="boxSal">
+                    <div class="icon">💰</div>
+                    <h4>Salary Data</h4>
+                    <p>employee_name, gross_salary</p>
+                    <input type="file" accept=".csv,.txt" onchange="handleUpload(this,'salary')">
+                    <div class="file-name" id="fname-salary"></div>
+                    <button class="sample-btn" onclick="downloadSample('salary')"><i class="fas fa-download"></i> Sample File</button>
+                </div>
+            </div>
+            <div class="process-section">
+                <label><i class="fas fa-calendar-alt"></i> Month Days:</label>
+                <select id="monthDays" onchange="applySettings()" disabled title="Policy: Always 30 days">
+    <option value="30" selected>30 Days (Policy Fixed)</option>
+</select>
+                <button class="btn btn-primary" id="btnProcess" disabled onclick="processAll()"><i class="fas fa-play"></i> Process Attendance</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader-container">
+            <div class="spinner"></div>
+            <div class="progress-bar-loader"><div class="progress-fill"></div></div>
+            <div class="dots-loader"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <p style="font-weight:600;color:#1e293b;margin-top:8px;">Calculating payroll data...</p>
+        </div>
+    </div>
+
+        <div class="tabs-container no-print" id="tabBar" style="display:none;">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('salary')"><i class="fas fa-coins"></i> Salary Sheet</button>
+            <button class="tab" onclick="switchTab('detail')"><i class="fas fa-list-alt"></i> Detail View</button>
+            <button class="tab" onclick="switchTab('charts')"><i class="fas fa-chart-pie"></i> Charts & Analytics</button>
+            <button class="tab" onclick="switchTab('policy')"><i class="fas fa-shield-alt"></i> Privacy & Policy</button>
+        </div>
+    </div>
+
+    <div class="filter-bar no-print" id="filterBar" style="display:none;">
+        <label><i class="fas fa-search"></i> Search:</label>
+        <input type="text" id="searchEmp" placeholder="Type employee name..." oninput="renderResults()">
+        <label><i class="fas fa-filter"></i> Status:</label>
+        <select id="statusFilter" onchange="renderResults()">
+            <option value="all">All Employees</option>
+            <option value="pending">⏳ Has Pending</option>
+            <option value="absent">🔴 Has Absent</option>
+            <option value="ambiguous">🟡 Has Ambiguous</option>
+            <option value="present">✅ Present Only</option>
+        </select>
+        <span class="filter-count" id="filterCount"></span>
+    </div>
+
+    <div id="resultsArea"></div>
+</div>
+
+<script>
+    const files = { attendance: null, config: null, salary: null };
+let allResults = [], dateConfig = [], salaryData = {}, totalMonthlyMinutes = 0, monthDays = 30;
+
+// ============ NEW POLICY CONSTANTS ============
+const NORMAL_REQUIRED_MIN = 525;   // Mon-Fri: 8h 45m
+const SATURDAY_REQUIRED_MIN = 240; // Saturday: 4h
+const SATURDAY_MULTIPLIER = 2;     // Saturday shortfall ×2
+const LEAVE_CONVERSION_MIN = 480;  // 8h = 1 leave
+// ==============================================
+    let approvalState = {}, manualEncashments = {}, manualOvertime = {}, currentTab = 'salary', printMode = null;
+    let salaryChart = null, attendanceChart = null, flowChart = null;
+
+        function downloadSample(type) {
+        let csv = '';
+        if (type === 'attendance') {
+            csv = 'AC-No,Name,Time,State,Exception\n' +
+                  '101,Ahmed Khan,01/03/2025 09:00,IN,\n' +
+                  '101,Ahmed Khan,01/03/2025 13:15,OUT,\n' +
+                  '101,Ahmed Khan,03/03/2025 09:15,IN,\n' +
+                  '101,Ahmed Khan,03/03/2025 17:30,OUT,\n' +
+                  '101,Ahmed Khan,04/03/2025 09:00,IN,\n' +
+                  '101,Ahmed Khan,04/03/2025 18:30,OUT,\n' +
+                  '102,Ayesha Ali,01/03/2025 09:10,IN,\n' +
+                  '102,Ayesha Ali,01/03/2025 13:20,OUT,\n' +
+                  '102,Ayesha Ali,03/03/2025 09:00,IN,\n' +
+                  '102,Ayesha Ali,03/03/2025 18:00,OUT,\n' +
+                  '102,Ayesha Ali,04/03/2025 09:20,IN,\n' +
+                  '102,Ayesha Ali,04/03/2025 17:00,OUT,\n' +
+                  '103,Bilal Ahmed,01/03/2025 09:00,IN,\n' +
+                  '103,Bilal Ahmed,01/03/2025 13:15,OUT,\n' +
+                  '103,Bilal Ahmed,03/03/2025 09:00,IN,\n' +
+                  '103,Bilal Ahmed,03/03/2025 18:00,OUT,\n' +
+                  '103,Bilal Ahmed,04/03/2025 09:00,IN,\n' +
+                  '103,Bilal Ahmed,04/03/2025 18:00,OUT,';
+        } else if (type === 'config') {
+            csv = 'date,start_time,required_hours,closing_time,penalty_multiplier\n' +
+                  '01/03/2025,09:00,4:00,13:15,1\n' +
+                  '03/03/2025,09:00,8:45,18:00,1\n' +
+                  '04/03/2025,09:00,8:45,18:00,1\n' +
+                  '05/03/2025,09:00,8:45,18:00,1\n' +
+                  '06/03/2025,09:00,8:45,18:00,1\n' +
+                  '07/03/2025,09:00,8:45,18:00,1\n' +
+                  '08/03/2025,09:00,4:00,13:15,1\n' +
+                  '10/03/2025,09:00,8:45,18:00,1\n' +
+                  '11/03/2025,09:00,8:45,18:00,1\n' +
+                  '12/03/2025,09:00,8:45,18:00,1\n' +
+                  '13/03/2025,09:00,8:45,18:00,1\n' +
+                  '14/03/2025,09:00,8:45,18:00,1\n' +
+                  '15/03/2025,09:00,4:00,13:15,1';
+        } else {
+            csv = 'employee_name,gross_salary\n' +
+                  'Ahmed Khan,60000\n' +
+                  'Ayesha Ali,45000\n' +
+                  'Bilal Ahmed,85000';
+        }
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `sample_${type}.csv`;
+        a.click();
+    }
+
+    const parseTime = (s) => { if(!s) return null; const p = s.toString().trim().split(':'); const h=+p[0]||0, m=+p[1]||0; return {h,m,total:h*60+m}; };
+    const fmtDate2 = (s) => { s=s.trim(); const p=s.split(/[\/\-]/); if(p[0].length===4) return `${p[2].padStart(2,'0')}/${p[1].padStart(2,'0')}/${p[0]}`; return `${p[0].padStart(2,'0')}/${p[1].padStart(2,'0')}/${p[2]}`; };
+    const fmtDate = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const fmtTime = (d) => d ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '--:--';
+    function parseHoursToDecimal(val) { val = val.toString().trim(); if (val.includes(':')) { const parts = val.split(':'); return (parseInt(parts[0])||0) + ((parseInt(parts[1])||0) / 60); } return parseFloat(val.replace(',', '.')) || 0; }
+    const parseDateTime = (dateStr, timeStr) => { try { const d=fmtDate2(dateStr); const t=parseTime(timeStr); if(!t) return null; const parts=d.split('/'); return new Date(+parts[2], +parts[1]-1, +parts[0], t.h, t.m, 0); } catch { return null; } };
+
+    function parseCSV(text) {
+    const lines = text.split('\n').filter(l=>l.trim());
+    if(lines.length<2) return [];
+    // Auto-detect separator: comma, tab, or semicolon
+    const firstLine = lines[0];
+    let sep = ',';
+    if (firstLine.includes('\t')) sep = '\t';
+    else if (firstLine.includes(';')) sep = ';';
+    const headers = firstLine.split(sep).map(h=>h.trim().replace(/^"|"$/g,''));
+    return lines.slice(1).map(line=>{
+        const vals = line.split(sep).map(v=>v.trim().replace(/^"|"$/g,''));
+        const row={};
+        headers.forEach((h,i)=> row[h]=vals[i]||'');
+        return row;
+    });
+}
+    function readFile(file) { return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=e=>resolve(e.target.result); r.onerror=reject; r.readAsText(file); }); }
+
+    function handleUpload(input, type) { 
+        if(input.files[0]) { 
+            files[type]=input.files[0]; 
+            document.getElementById(`fname-${type}`).textContent='✅ '+input.files[0].name; 
+            document.getElementById(`box${type==='attendance'?'Att':type==='config'?'Cfg':'Sal'}`).classList.add('has-file'); 
+        } 
+        document.getElementById('btnProcess').disabled = !(files.attendance && files.config && files.salary); 
+    }
+    
+    function applySettings() {
+    // NEW POLICY: Always 30 days for per-day salary
+    monthDays = 30;
+    if(allResults.length) recalculateAll();
+}
+    
+        function switchTab(t) { 
+        currentTab=t; 
+        document.querySelectorAll('.tab').forEach((el,i)=> {
+            const tabTypes = ['salary', 'detail', 'charts', 'policy'];
+            el.classList.toggle('active', tabTypes[i] === t);
+        });
+        // Show/hide filter bar based on tab
+        const filterBar = document.getElementById('filterBar');
+        if (t === 'charts' || t === 'policy') {
+            filterBar.style.display = 'none';
+        } else {
+            filterBar.style.display = 'flex';
+        }
+        renderResults(); 
+    }
+
+    function processPunches(punches) {
+        const valid = punches.filter(p => { const st = p.state.toLowerCase(); return st.includes('in') || st.includes('out'); });
+        const inP = valid.filter(p=>p.state.toLowerCase().includes('in')); const outP = valid.filter(p=>p.state.toLowerCase().includes('out'));
+        const totalIn = inP.length, totalOut = outP.length;
+        if (totalIn===0 && totalOut===0) return { inTime:null, outTime:null, status:'ABSENT', caseNum:7 };
+        if (totalIn>=1 && totalOut===0) { const firstIn = inP.reduce((a,b)=>a.dateTime<b.dateTime?a:b); return { inTime:firstIn.dateTime, outTime:null, status:'AMBIGUOUS', caseNum:5 }; }
+        if (totalIn===0 && totalOut>=1) { const lastOut = outP.reduce((a,b)=>a.dateTime>b.dateTime?a:b); return { inTime:null, outTime:lastOut.dateTime, status:'AMBIGUOUS', caseNum:6 }; }
+        const firstIn = inP.reduce((a,b)=>a.dateTime<b.dateTime?a:b); const lastOut = outP.reduce((a,b)=>a.dateTime>b.dateTime?a:b);
+        let caseNum = 1; if (totalIn===1 && totalOut===1) caseNum=1; else if (totalIn>=2 && totalOut===1) caseNum=2; else if (totalIn===1 && totalOut>=2) caseNum=3; else if (totalIn>=2 && totalOut>=2) caseNum=4;
+        if (totalIn>3 || totalOut>3) caseNum=8;
+        return { inTime:firstIn.dateTime, outTime:lastOut.dateTime, status:'PRESENT', caseNum };
+    }
+
+    // ============================================================
+// NEW POLICY CALCULATION FUNCTION (Mon-Fri + Saturday handled)
+// ============================================================
+function calcDay(pr, cfg, perMinRate, perDaySalary, empName) {
+    const key = `${empName}|${cfg.date}`;
+    const pen = cfg.penaltyMultiplier || 1;
+
+    // ---- Detect Saturday ----
+    // date format: DD/MM/YYYY
+    const dateParts = cfg.date.split('/');
+    const dateObj = new Date(+dateParts[2], +dateParts[1] - 1, +dateParts[0]);
+    const isSaturday = dateObj.getDay() === 6;
+
+                // Required minutes for this day — FROM CONFIG (flexible)
+    const reqMin = cfg.requiredMinutes || (isSaturday ? SATURDAY_REQUIRED_MIN : NORMAL_REQUIRED_MIN);
+
+    // ★★★ POLICY FIX ★★★
+    // Per Minute Deduction Rate = Daily Salary / 480 (8 hours = 1 day)
+    // Policy: "8 hrs = 1 day leave; per day salary = Gross / 30"
+    const dailyMinuteRate = perDaySalary / 480;
+
+    // ============ AMBIGUOUS (Pending Approval) ============
+    if (pr.status === 'AMBIGUOUS') {
+        const markedAbsent = approvalState[key] === 'absent';
+        const ded = markedAbsent ? perDaySalary : 0;
+        return {
+            date: cfg.date, status: markedAbsent ? 'ABSENT' : 'AMBIGUOUS',
+            orig: 'AMBIGUOUS', caseNum: pr.caseNum,
+            inTime: pr.inTime ? fmtTime(pr.inTime) : '?',
+            outTime: pr.outTime ? fmtTime(pr.outTime) : '?',
+            workedMin: 0, reqMin, lateMin: 0, earlyMin: 0,
+            shortfallMin: reqMin, effectiveDeductionMin: 0,
+            overtimeMin: 0, pen,
+            dailySalary: Math.round(perDaySalary),
+            dailyMinuteRate: dailyMinuteRate,
+            lateDed: 0, earlyDed: 0, shortfallDed: 0,
+            absentDed: Math.round(ded), totalDed: Math.round(ded),
+            approved: markedAbsent, isSaturday,
+            startTime: cfg.startTime, closingTime: cfg.closingTime
+        };
+    }
+
+            // ---- ABSENT (no punches = AUTOMATIC full daily salary deduction) ----
+    if (pr.status === 'ABSENT') {
+        // No punch = automatically absent, full daily salary deducted
+        const ded = perDaySalary;
+        return {
+            date: cfg.date, status: 'ABSENT',
+            orig: 'ABSENT', caseNum: pr.caseNum || 7,
+            inTime: '--', outTime: '--',
+            workedMin: 0, reqMin, lateMin: 0, earlyMin: 0,
+            shortfallMin: reqMin, effectiveDeductionMin: 0,
+            overtimeMin: 0, pen,
+            dailySalary: Math.round(perDaySalary),
+            dailyMinuteRate: dailyMinuteRate,
+            lateDed: 0, earlyDed: 0, shortfallDed: 0,
+            absentDed: Math.round(ded),
+            totalDed: Math.round(ded),
+            approved: true,   // ← Auto-approved
+            isSaturday,
+            startTime: cfg.startTime, closingTime: cfg.closingTime
+        };
+    }
+
+    // ============ PRESENT (Calculate shortage + OT) ============
+    const inTime = pr.inTime, outTime = pr.outTime;
+    const start = parseTime(cfg.startTime), close = parseTime(cfg.closingTime);
+    const startDt = new Date(inTime); startDt.setHours(start.h, start.m, 0, 0);
+    const closeDt = new Date(inTime); closeDt.setHours(close.h, close.m, 0, 0);
+
+    let lateMin = 0, earlyMin = 0, overtimeMin = 0, workedMin = 0;
+
+    // Late: arrival after start time
+    if (inTime > startDt) lateMin = Math.round((inTime - startDt) / 60000);
+    // Early: departure before closing time
+    if (outTime < closeDt) earlyMin = Math.round((closeDt - outTime) / 60000);
+
+    // Worked minutes INSIDE scheduled window only
+    const effectiveIn = inTime > startDt ? inTime : startDt;
+    const effectiveOut = outTime < closeDt ? outTime : closeDt;
+    workedMin = Math.max(0, Math.round((effectiveOut - effectiveIn) / 60000));
+
+    // Overtime: only time AFTER closing (separate from shortage)
+    if (outTime > closeDt) overtimeMin = Math.round((outTime - closeDt) / 60000);
+
+    // ============================================================
+    // DEDUCTION LOGIC — DOUBLE DEDUCTION PREVENTED
+    // ============================================================
+    let shortfallMin = 0, effectiveDeductionMin = 0;
+    let lateDed = 0, earlyDed = 0, shortfallDed = 0;
+    let st = 'PRESENT';
+
+                    if (isSaturday) {
+        // SATURDAY: Shortfall × pen (from CONFIG)
+        shortfallMin = Math.max(0, reqMin - workedMin);
+        effectiveDeductionMin = shortfallMin * pen;
+        shortfallDed = Math.round(effectiveDeductionMin * dailyMinuteRate);
+        lateDed = 0;
+        earlyDed = 0;
+
+        if (shortfallMin > 0 && lateMin > 0) st = 'SAT LATE';
+        else if (shortfallMin > 0 && earlyMin > 0) st = 'SAT EARLY';
+        else if (shortfallMin > 0) st = 'SAT SHORT';
+        else st = 'PRESENT';
+    } else {                                                              // ← YEH LINE MISSING THI
+        // MON-FRI: Late + Early = ONE shortage
+        shortfallMin = lateMin + earlyMin;
+        effectiveDeductionMin = shortfallMin;
+        lateDed = Math.round(lateMin * dailyMinuteRate * pen);
+        earlyDed = Math.round(earlyMin * dailyMinuteRate * pen);
+        shortfallDed = 0;
+
+        if (lateMin > 0 && earlyMin > 0) st = 'LATE+EARLY';
+        else if (lateMin > 0) st = 'LATE';
+        else if (earlyMin > 0) st = 'EARLY';
+        else st = 'PRESENT';
+    }
+
+    // Total deduction for this day (shortage charged only ONCE)
+    const totalDed = lateDed + earlyDed + shortfallDed;
+
+    return {
+        date: cfg.date, status: st, orig: 'PRESENT', caseNum: pr.caseNum,
+        inTime: fmtTime(inTime), outTime: fmtTime(outTime),
+        workedMin, reqMin, lateMin, earlyMin,
+        shortfallMin, effectiveDeductionMin,
+        overtimeMin, pen,
+        dailySalary: Math.round(perDaySalary),
+        dailyMinuteRate: dailyMinuteRate,
+        lateDed, earlyDed, shortfallDed,
+        absentDed: 0, totalDed,
+        approved: true, isSaturday,
+        startTime: cfg.startTime, closingTime: cfg.closingTime
+    };
+}
+// ============================================================
+
+    async function processAll() {
+        document.getElementById('loadingOverlay').classList.add('active'); 
+        document.getElementById('resultsArea').innerHTML = ''; 
+        document.getElementById('tabBar').style.display = 'none'; 
+        document.getElementById('filterBar').style.display = 'none';
+        approvalState = {}; manualEncashments = {}; manualOvertime = {}; applySettings();
+        try {
+            const [attText, cfgText, salText] = await Promise.all([readFile(files.attendance), readFile(files.config), readFile(files.salary)]);
+            const attRows = parseCSV(attText), cfgRows = parseCSV(cfgText), salRows = parseCSV(salText);
+            dateConfig = []; totalMonthlyMinutes = 0;
+            cfgRows.forEach(r => { const rh = parseHoursToDecimal(r['required_hours'] || '8.75'); const c = { date: fmtDate2(r['date'] || ''), startTime: (r['start_time'] || '9:00').trim(), requiredHours: rh, requiredMinutes: Math.round(rh * 60), closingTime: (r['closing_time'] || '18:00').trim(), penaltyMultiplier: parseInt(r['penalty_multiplier'] || '1') }; if (c.date) { dateConfig.push(c); totalMonthlyMinutes += c.requiredMinutes; } });
+            salaryData = {}; salRows.forEach(r => { const n=(r['employee_name']||'').trim(); const g=parseFloat((r['gross_salary']||'0').replace(/,/g,'')); if(n&&g>0) salaryData[n]=g; });
+            const empMap = {};
+            attRows.forEach(r => { const name = (r['Name']||'').trim(); if(!name || name==='Name') return; const timeRaw = (r['Time']||'').trim(); const parts = timeRaw.split(' '); const dt = parseDateTime(parts[0], parts[1]); if(!dt) return; if(!empMap[name]) empMap[name]=[]; empMap[name].push({ dateTime: dt, date: fmtDate(dt), state: (r['State']||'').trim(), exception: (r['Exception']||'').trim(), isValid: true }); });
+            allResults = [];
+            const allNames = new Set([...Object.keys(empMap), ...Object.keys(salaryData)]);
+            for (const en of allNames) {
+                const gs = salaryData[en]; if(!gs) continue;
+// NEW POLICY: Daily salary = Gross / 30 (always 30 per policy)
+const perDaySalary = gs / 30;
+// perMinRate is now calculated per-day inside calcDay() based on day type
+const perMinRate = 0; // legacy — not used for attendance deduction anymore
+                const punches = empMap[en] || []; const byDate = {}; punches.forEach(p => { if(!byDate[p.date]) byDate[p.date]=[]; byDate[p.date].push(p); });
+                const daily = []; let totalWorkedMin = 0, totalOvertimeMin = 0, tlm=0, tem=0, tld=0, ted=0, tad=0, td=0, tsd=0;
+                let presentCount=0, absentCount=0, ambiguousCount=0, pendingAbsentCount=0, pendingAmbiguousCount=0;
+                dateConfig.forEach(cfg => { const dayPunches = byDate[cfg.date] || []; const pr = dayPunches.length ? processPunches(dayPunches) : { inTime:null, outTime:null, status:'ABSENT', caseNum:7 }; const d = calcDay(pr, cfg, perMinRate, perDaySalary, en);
+                    totalWorkedMin += d.workedMin; totalOvertimeMin += d.overtimeMin;
+tlm += d.lateMin; tem += d.earlyMin;
+tld += d.lateDed; ted += d.earlyDed;
+tsd += d.shortfallDed || 0;
+tad += d.absentDed||0; td += d.totalDed;
+                    if (d.orig === 'PRESENT') { presentCount++; } else if (d.orig === 'ABSENT') { absentCount++; if (!d.approved) pendingAbsentCount++; } else if (d.orig === 'AMBIGUOUS') { if (d.status === 'ABSENT') { absentCount++; if (!d.approved) pendingAbsentCount++; } else { ambiguousCount++; pendingAmbiguousCount++; } }
+                    daily.push(d); });
+                const autoEnc = Math.round((5*perDaySalary)/3);
+// NEW POLICY: OT calculated per-day with that day's rate, then summed
+let autoOT = 0;
+daily.forEach(d => {
+    // OT uses the SAME daily minute rate as that day
+    autoOT += Math.round(d.overtimeMin * d.dailyMinuteRate);
+});
+manualEncashments[en]=0; manualOvertime[en]=autoOT;
+const netPayable = gs - td + autoEnc + autoOT;
+                // NEW POLICY: Monthly total late/absent minutes + leave conversion
+let monthlyShortfallMin = 0, monthlyEffectiveMin = 0;
+daily.forEach(d => {
+    monthlyShortfallMin += d.shortfallMin || 0;
+    monthlyEffectiveMin += d.effectiveDeductionMin || 0;
+});
+const leaveEquivalent = +(monthlyEffectiveMin / LEAVE_CONVERSION_MIN).toFixed(2);
+
+allResults.push({
+    name:en, grossSalary:gs,
+    perDaySalary:Math.round(perDaySalary), perMinRate, monthDays,
+    totalRequiredMin: totalMonthlyMinutes, totalWorkedMin, totalOvertimeMin,
+    dailyResults:daily, tLateMin:tlm, tEarlyMin:tem,
+    tLateDed:tld, tEarlyDed:ted, tShortfallDed:tsd, tAbsentDed:tad, totalDed:td,
+    finalSalary:gs-td, autoEncashment:autoEnc, manualEncashment:0,
+    leaveEncashment:autoEnc, overtimeAmount:autoOT, autoOvertimeAmount:autoOT,
+    netPayable:netPayable,
+    presentDays: presentCount, absentDays: absentCount, ambiguousDays: ambiguousCount,
+    pendingAbsent: pendingAbsentCount, pendingAmbiguous: pendingAmbiguousCount,
+    hasAttendance: !!empMap[en],
+    monthlyShortfallMin, monthlyEffectiveMin, leaveEquivalent
+});
+            }
+            allResults.sort((a,b)=>a.name.localeCompare(b.name));
+            document.getElementById('tabBar').style.display='flex'; 
+            document.getElementById('filterBar').style.display='flex';
+            currentTab='salary'; renderResults();
+        } catch(e) { alert('Error: '+e.message); }
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // FIXED: These functions now preserve the open state of profile cards
+    function updateOvertime(empName, val) { 
+        const amt=parseInt(val)||0; 
+        manualOvertime[empName]=amt; 
+        const emp=allResults.find(e=>e.name===empName); 
+        if(emp){ emp.overtimeAmount=amt; emp.netPayable=emp.finalSalary+emp.leaveEncashment+amt; } 
+        renderResults(true); 
+    }
+    
+    function changeAmbiguousStatus(empName, date, value) { 
+        if(value==='absent') approvalState[`${empName}|${date}`]='absent'; 
+        else delete approvalState[`${empName}|${date}`]; 
+        recalculateAll(true); 
+    }
+    
+    function approveAbsent(empName, date) { 
+        approvalState[`${empName}|${date}`]='approved'; 
+        recalculateAll(true); 
+    }
+    
+    function approveAll(empName) { 
+        const emp = allResults.find(e=>e.name===empName); 
+        if(!emp) return; 
+        emp.dailyResults.forEach(d=>{ 
+            const k=`${empName}|${d.date}`; 
+            if(d.orig==='ABSENT'&&!d.approved) approvalState[k]='approved'; 
+            if(d.orig==='AMBIGUOUS'&&!d.approved) approvalState[k]='absent'; 
+        }); 
+        recalculateAll(true); 
+    }
+    
+    function updateEncashment(empName, val) { 
+        const amt=parseInt(val)||0; 
+        manualEncashments[empName]=amt; 
+        const emp=allResults.find(e=>e.name===empName); 
+        if(emp){ 
+            emp.manualEncashment=amt; 
+            emp.leaveEncashment=amt>0?amt:emp.autoEncashment; 
+            emp.netPayable=emp.finalSalary+emp.leaveEncashment+(manualOvertime[empName]??emp.overtimeAmount); 
+        } 
+        renderResults(true); 
+    }
+
+    function recalculateAll(preserveOpen = false) {
+        if(!allResults.length) return;
+        const sa={...approvalState}, se={...manualEncashments}, so={...manualOvertime};
+        allResults.forEach(emp => {
+    // NEW POLICY: Daily salary = Gross / 30 (always 30)
+    const perDay = emp.grossSalary / 30;
+    const perMin = 0; // legacy — not used
+    let totalWorked=0, totalOT=0, tlm=0,tem=0,tld=0,ted=0,tad=0,td=0,tsd=0;
+    let presentCount=0, absentCount=0, ambiguousCount=0, pendingAbsentCount=0, pendingAmbiguousCount=0;
+    const nd = emp.dailyResults.map(d => {
+        const cfg = dateConfig.find(c=>c.date===d.date); if(!cfg) return d;
+        const k=`${emp.name}|${d.date}`;
+        if(sa[k]!==undefined) approvalState[k]=sa[k]; else delete approvalState[k];
+        const pr = {
+            inTime: (d.inTime!=='?'&&d.inTime!=='--')?parseDateTime(d.date,d.inTime):null,
+            outTime: (d.outTime!=='?'&&d.outTime!=='--')?parseDateTime(d.date,d.outTime):null,
+            status: d.orig, caseNum: d.caseNum||7
+        };
+        const rc = calcDay(pr, cfg, perMin, perDay, emp.name);
+                totalWorked+=rc.workedMin; totalOT+=rc.overtimeMin;
+tlm+=rc.lateMin; tem+=rc.earlyMin;
+tld+=rc.lateDed; ted+=rc.earlyDed;
+tsd+=rc.shortfallDed || 0;
+tad+=rc.absentDed||0; td+=rc.totalDed;
+                if (rc.orig === 'PRESENT') { presentCount++; } else if (rc.orig === 'ABSENT') { absentCount++; if (!rc.approved) pendingAbsentCount++; } else if (rc.orig === 'AMBIGUOUS') { if (rc.status === 'ABSENT') { absentCount++; if (!rc.approved) pendingAbsentCount++; } else { ambiguousCount++; pendingAmbiguousCount++; } } return rc; });
+            const autoEnc = Math.round((5*perDay)/3), me=se[emp.name]||0;
+// NEW POLICY: OT per-day with that day's rate
+let autoOT = 0;
+nd.forEach(d => {
+    autoOT += Math.round(d.overtimeMin * d.dailyMinuteRate);
+});
+            const otAmt = so[emp.name] !== undefined ? so[emp.name] : autoOT;
+            // NEW POLICY: Monthly totals + leave conversion
+let monthlyShortfallMin = 0, monthlyEffectiveMin = 0;
+nd.forEach(d => {
+    monthlyShortfallMin += d.shortfallMin || 0;
+    monthlyEffectiveMin += d.effectiveDeductionMin || 0;
+});
+const leaveEquivalent = +(monthlyEffectiveMin / LEAVE_CONVERSION_MIN).toFixed(2);
+
+Object.assign(emp, {
+    totalWorkedMin: totalWorked, totalOvertimeMin: totalOT,
+    dailyResults:nd, tLateMin:tlm, tEarlyMin:tem,
+    tLateDed:tld, tEarlyDed:ted, tShortfallDed:tsd, tAbsentDed:tad, totalDed:td,
+    finalSalary:emp.grossSalary-td, autoEncashment:autoEnc,
+    manualEncashment:me, leaveEncashment:me>0?me:autoEnc,
+    overtimeAmount:otAmt, autoOvertimeAmount:autoOT,
+    netPayable:(emp.grossSalary-td)+(me>0?me:autoEnc)+otAmt,
+    presentDays: presentCount, absentDays: absentCount, ambiguousDays: ambiguousCount,
+    pendingAbsent: pendingAbsentCount, pendingAmbiguous: pendingAmbiguousCount,
+    monthlyShortfallMin, monthlyEffectiveMin, leaveEquivalent
+});
+});
+        renderResults(preserveOpen);
+    }
+
+    function getFilteredEmployees() {
+        const search = (document.getElementById('searchEmp')?.value || '').toLowerCase().trim();
+        const filter = document.getElementById('statusFilter')?.value || 'all';
+        let filtered = allResults;
+        if (search) filtered = filtered.filter(e => e.name.toLowerCase().includes(search));
+        if (filter === 'pending') filtered = filtered.filter(e => (e.pendingAbsent || 0) + (e.pendingAmbiguous || 0) > 0);
+        else if (filter === 'absent') filtered = filtered.filter(e => (e.absentDays || 0) > 0);
+        else if (filter === 'ambiguous') filtered = filtered.filter(e => (e.ambiguousDays || 0) > 0);
+        else if (filter === 'present') filtered = filtered.filter(e => (e.presentDays || 0) > 0 && (e.absentDays || 0) === 0 && (e.ambiguousDays || 0) === 0);
+        return filtered;
+    }
+
+        function renderResults(preserveOpen = false) {
+        const area = document.getElementById('resultsArea');
+
+        // Policy tab can be shown without results
+        if (currentTab === 'policy') {
+            renderPolicy(area);
+            return;
+        }
+
+        if(!allResults.length){ area.innerHTML=''; return; }
+        if(printMode==='salary') { renderSalarySheet(area, allResults, preserveOpen); return; }
+        if(printMode==='detail') { renderDetailView(area, allResults, preserveOpen); return; }
+        
+        if (currentTab === 'charts') {
+            renderChartsView(area);
+            return;
+        }
+        
+        const filtered = getFilteredEmployees();
+        document.getElementById('filterCount').textContent = `Showing ${filtered.length} of ${allResults.length} employees`;
+        currentTab==='salary' ? renderSalarySheet(area, filtered, preserveOpen) : renderDetailView(area, filtered, preserveOpen);
+    }
+
+    // ============================================================
+    // PRIVACY & POLICY
+    // ============================================================
+    function renderPolicy(area) {
+        let h = `
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header"><i class="fas fa-shield-alt"></i> Privacy & Policy</div>
+            <div class="card-body" style="padding: 30px;">
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-clock"></i> 1. Office Timings</h2>
+                <ul style="margin-bottom:25px; padding-left:25px; line-height:2;">
+                    <li><strong>Monday to Friday:</strong> 9:00 AM to 6:00 PM — Minimum 8 hours 45 minutes (525 minutes)</li>
+                    <li><strong>Saturday:</strong> 9:00 AM to 1:15 PM — Minimum 4 hours (240 minutes)</li>
+                </ul>
+
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-user-clock"></i> 2. Late / Early / Salary Deduction</h2>
+                <ul style="margin-bottom:25px; padding-left:25px; line-height:2;">
+                    <li><strong>Mon–Fri:</strong> Less than 8h 45m = Late + Early = Shortage (charged once)</li>
+                    <li><strong>Saturday:</strong> Less than 4 hours × 2 (4h Sat = 8h other days)</li>
+                    <li><strong>Monthly Total:</strong> Total late/absent hours counted per month</li>
+                    <li><strong>8 Hours = 1 Day Leave:</strong> 480 minutes = 1 day's leave/salary equivalent</li>
+                    <li><strong>Per Day Salary = Gross Salary ÷ 30</strong></li>
+                    <li><strong>Per Minute Rate = Daily Salary ÷ 480</strong></li>
+                </ul>
+
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-clock"></i> 3. Overtime</h2>
+                <ul style="margin-bottom:25px; padding-left:25px; line-height:2;">
+                    <li>OT = OUT Time − Closing Time (only if OUT &gt; Closing)</li>
+                    <li>OT separately calculated and added to salary</li>
+                    <li>OT can be compensated/adjusted against late/absent hours</li>
+                    <li>OT is NOT a deduction</li>
+                </ul>
+
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-calendar-check"></i> 4. Absence & Leave</h2>
+                <ul style="margin-bottom:25px; padding-left:25px; line-height:2;">
+                    <li>Advance information required from management</li>
+                    <li>Salary deducted for every absence (full daily salary)</li>
+                    <li>After every 3 months, 5 days salary = leave encashment</li>
+                    <li>Absent = automatically full daily salary deduction</li>
+                </ul>
+
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-calculator"></i> 5. Salary Calculation Formula</h2>
+                <div style="background:#f0f9ff; padding:20px; border-radius:12px; margin-bottom:25px; border-left:4px solid #2563eb; font-family:'Consolas',monospace; font-size:0.9rem; line-height:1.9;">
+                    <div style="font-weight:700; color:#1e40af; margin-bottom:8px;">Monthly Calculation:</div>
+                    <div>Daily Salary = Gross ÷ 30</div>
+                    <div>Per Minute Rate = Daily Salary ÷ 480</div>
+                    <div>Deduction = Total Minutes × Per Minute Rate</div>
+                    <div style="margin-top:10px; color:#64748b;">Example: 2400 minutes shortage = 5 days = 5 × Daily Salary</div>
+                </div>
+
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-lock"></i> 6. Privacy & Data Security</h2>
+                <ul style="margin-bottom:25px; padding-left:25px; line-height:2;">
+                    <li>All data is processed <strong>in your browser only</strong></li>
+                    <li>No data is uploaded to any server</li>
+                    <li>No data is shared with third parties</li>
+                    <li>Files remain on your device only</li>
+                    <li>Software works <strong>100% offline</strong></li>
+                </ul>
+
+                <h2 style="color:#2563eb; margin-bottom:15px; font-size:1.2rem;"><i class="fas fa-file-contract"></i> 7. General Rules</h2>
+                <ul style="margin-bottom:25px; padding-left:25px; line-height:2;">
+                    <li>Employees must use biometric/card swipe/logbook</li>
+                    <li>Attendance must be recorded daily</li>
+                    <li>All rules follow company policy</li>
+                </ul>
+
+                <div style="background:#fef3c7; padding:18px; border-radius:12px; border-left:4px solid #f59e0b; margin-bottom:25px;">
+                    <p style="font-weight:700; color:#92400e; margin-bottom:5px;"><i class="fas fa-exclamation-triangle"></i> Important Note:</p>
+                    <p style="color:#92400e; font-size:0.9rem;">The same attendance shortage is NEVER deducted more than once. Late + Early = one shortage. Saturday shortfall × 2 = one effective shortage.</p>
+                </div>
+
+                <div style="text-align:center; margin-top:30px; padding-top:20px; border-top:1px solid #e2e8f0;">
+                    <p style="color:#64748b; font-size:0.85rem;">© 2025 <strong>AttendPay Pro</strong> v7.0 — All Rights Reserved</p>
+                    <p style="color:#94a3b8; font-size:0.8rem;">Made with <i class="fas fa-heart" style="color:#ef4444;"></i> for HR Teams</p>
+                </div>
+            </div>
+        </div>`;
+        area.innerHTML = h;
+    }
+
+    // ============================================================
+    // SHOW POLICY FROM HEADER
+    // ============================================================
+    function showPolicy() {
+        switchTab('policy');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderChartsView(area) {
+        // Destroy existing charts
+        if (salaryChart) salaryChart.destroy();
+        if (attendanceChart) attendanceChart.destroy();
+        if (flowChart) flowChart.destroy();
+        
+        const totalEmp = allResults.length;
+        const totalGross = allResults.reduce((s,e)=>s+e.grossSalary,0);
+        const totalNet = allResults.reduce((s,e)=>s+e.netPayable,0);
+        const totalDed = allResults.reduce((s,e)=>s+e.totalDed,0);
+        const totalOT = allResults.reduce((s,e)=>s+e.overtimeAmount,0);
+        const totalEnc = allResults.reduce((s,e)=>s+e.leaveEncashment,0);
+        
+        // Count status
+        let totalPresent = 0, totalAbsent = 0, totalAmbiguous = 0, totalLate = 0;
+        allResults.forEach(e => {
+            totalPresent += e.presentDays || 0;
+            totalAbsent += e.absentDays || 0;
+            totalAmbiguous += e.ambiguousDays || 0;
+            e.dailyResults.forEach(d => {
+                if (d.status.includes('LATE') || d.status.includes('EARLY')) totalLate++;
+            });
+        });
+        
+        let h = `
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header"><i class="fas fa-chart-pie"></i> Analytics Dashboard</div>
+            <div class="card-body">
+                <div class="summary-grid">
+                    <div class="summary-box blue"><div class="sb-icon"><i class="fas fa-users"></i></div><div class="sb-label">Total Employees</div><div class="sb-value">${totalEmp}</div></div>
+                    <div class="summary-box green"><div class="sb-icon"><i class="fas fa-check-circle"></i></div><div class="sb-label">Present Days</div><div class="sb-value">${totalPresent}</div></div>
+                    <div class="summary-box red"><div class="sb-icon"><i class="fas fa-times-circle"></i></div><div class="sb-label">Absent Days</div><div class="sb-value">${totalAbsent}</div></div>
+                    <div class="summary-box orange"><div class="sb-icon"><i class="fas fa-clock"></i></div><div class="sb-label">Late/Early</div><div class="sb-value">${totalLate}</div></div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-pie" style="color:#2563eb;"></i> Attendance Distribution (Pie Chart)</h4>
+                        <canvas id="attendancePieChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-bar" style="color:#10b981;"></i> Salary Breakdown (Bar Chart)</h4>
+                        <canvas id="salaryBarChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4><i class="fas fa-project-diagram" style="color:#f59e0b;"></i> Payroll Flow Chart</h4>
+                        <canvas id="payrollFlowChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-line" style="color:#8b5cf6;"></i> Employee Status Summary</h4>
+                        <canvas id="employeeStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        
+        area.innerHTML = h;
+        
+        // Render charts after DOM update
+        setTimeout(() => {
+            // Pie Chart - Attendance Distribution
+            const pieCtx = document.getElementById('attendancePieChart');
+            if (pieCtx) {
+                attendanceChart = new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Present', 'Absent', 'Ambiguous', 'Late/Early'],
+                        datasets: [{
+                            data: [totalPresent, totalAbsent, totalAmbiguous, totalLate],
+                            backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } }
+                        }
+                    }
+                });
+            }
+            
+            // Bar Chart - Salary Breakdown
+            const barCtx = document.getElementById('salaryBarChart');
+            if (barCtx) {
+                salaryChart = new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Gross Salary', 'Deductions', 'Overtime', 'Encashment', 'Net Payable'],
+                        datasets: [{
+                            label: 'Amount (Rs)',
+                            data: [totalGross, totalDed, totalOT, totalEnc, totalNet],
+                            backgroundColor: ['#3b82f6', '#ef4444', '#f97316', '#8b5cf6', '#10b981'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } }
+                        }
+                    }
+                });
+            }
+            
+            // Flow Chart - Payroll Process
+            const flowCtx = document.getElementById('payrollFlowChart');
+            if (flowCtx) {
+                flowChart = new Chart(flowCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: allResults.slice(0, 8).map(e => e.name),
+                        datasets: [
+                            { label: 'Gross', data: allResults.slice(0, 8).map(e => e.grossSalary), backgroundColor: '#3b82f6' },
+                            { label: 'Net', data: allResults.slice(0, 8).map(e => e.netPayable), backgroundColor: '#10b981' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } }
+                        }
+                    }
+                });
+            }
+            
+            // Employee Status Chart
+            const statusCtx = document.getElementById('employeeStatusChart');
+            if (statusCtx) {
+                new Chart(statusCtx, {
+                    type: 'polarArea',
+                    data: {
+                        labels: ['Full Present', 'Has Absent', 'Has Ambiguous', 'Has Pending'],
+                        datasets: [{
+                            data: [
+                                allResults.filter(e => e.absentDays === 0 && e.ambiguousDays === 0).length,
+                                allResults.filter(e => e.absentDays > 0).length,
+                                allResults.filter(e => e.ambiguousDays > 0).length,
+                                allResults.filter(e => (e.pendingAbsent + e.pendingAmbiguous) > 0).length
+                            ],
+                            backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true } }
+                        }
+                    }
+                });
+            }
+        }, 300);
+    }
+
+        function renderSalarySheet(area, employees, preserveOpen = false) {
+    // ============ CALCULATIONS (unchanged) ============
+    const totalReq = employees.reduce((s,e)=>s+e.totalRequiredMin,0);
+    const totalWork = employees.reduce((s,e)=>s+e.totalWorkedMin,0);
+    const totalOT = employees.reduce((s,e)=>s+e.totalOvertimeMin,0);
+    const grandNet = employees.reduce((s,e)=>s+e.netPayable,0);
+    const grandDed = employees.reduce((s,e)=>s+e.totalDed,0);
+    const grandGross = employees.reduce((s,e)=>s+e.grossSalary,0);
+    const grandOT = employees.reduce((s,e)=>s+e.overtimeAmount,0);
+    const grandEnc = employees.reduce((s,e)=>s+e.leaveEncashment,0);
+    const grandLateMin = employees.reduce((s,e)=>s+(e.tLateMin||0),0);
+    const grandEarlyMin = employees.reduce((s,e)=>s+(e.tEarlyMin||0),0);
+    const grandShortMin = employees.reduce((s,e)=>s+(e.monthlyShortfallMin||0),0);
+    const grandEffMin = employees.reduce((s,e)=>s+(e.monthlyEffectiveMin||0),0);
+    const grandLeaveEq = employees.reduce((s,e)=>s+(e.leaveEquivalent||0),0);
+
+    let h = `
+    <!-- ============================================ -->
+    <!-- CARD 1: SALARY SHEET (AMOUNTS ONLY) -->
+    <!-- ============================================ -->
+    <div class="card animate__animated animate__fadeIn" id="salarySheetCard">
+        <div class="card-header"><i class="fas fa-coins"></i> <strong>Salary Sheet (Amounts in Rs.)</strong> <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">| Employees: ${employees.length}</span></div>
+        <div class="card-body">
+            <div class="summary-grid">
+                <div class="summary-box blue"><div class="sb-icon"><i class="fas fa-wallet"></i></div><div class="sb-label">Total Gross</div><div class="sb-value">${grandGross.toLocaleString()}</div></div>
+                <div class="summary-box red"><div class="sb-icon"><i class="fas fa-minus-circle"></i></div><div class="sb-label">Deductions</div><div class="sb-value">${grandDed.toLocaleString()}</div></div>
+                <div class="summary-box orange"><div class="sb-icon"><i class="fas fa-clock"></i></div><div class="sb-label">Overtime</div><div class="sb-value">${grandOT.toLocaleString()}</div></div>
+                <div class="summary-box purple"><div class="sb-icon"><i class="fas fa-gift"></i></div><div class="sb-label">Encashment</div><div class="sb-value">${grandEnc.toLocaleString()}</div></div>
+                <div class="summary-box green"><div class="sb-icon"><i class="fas fa-check-circle"></i></div><div class="sb-label">Net Payable</div><div class="sb-value">${grandNet.toLocaleString()}</div></div>
+            </div>
+            <div class="table-wrapper"><table><thead><tr>
+                <th>#</th><th>Employee</th><th>Gross</th><th>Late Ded</th><th>Early Ded</th><th>Short Ded</th><th>Absent Ded</th><th>Total Ded</th><th>Encashment</th><th>OT Amount</th><th>Net Payable</th>
+            </tr></thead><tbody>`;
+    
+    employees.forEach((e,i)=>{
+        h += `<tr>
+            <td>${i+1}</td>
+            <td class="text-left">${e.name}</td>
+            <td class="num">${e.grossSalary.toLocaleString()}</td>
+            <td class="num" style="color:#dc2626;">${e.tLateDed>0?e.tLateDed.toLocaleString():'-'}</td>
+            <td class="num" style="color:#dc2626;">${e.tEarlyDed>0?e.tEarlyDed.toLocaleString():'-'}</td>
+            <td class="num" style="color:#dc2626;">${(e.tShortfallDed||0)>0?e.tShortfallDed.toLocaleString():'-'}</td>
+            <td class="num" style="color:#dc2626;">${e.tAbsentDed>0?e.tAbsentDed.toLocaleString():'-'}</td>
+            <td class="num" style="font-weight:700;color:#dc2626;">${e.totalDed>0?e.totalDed.toLocaleString():'-'}</td>
+            <td class="num"><input type="number" value="${e.manualEncashment>0?e.manualEncashment:''}" placeholder="${e.autoEncashment.toLocaleString()}" onchange="updateEncashment('${e.name.replace(/'/g,"\\'")}', this.value)" class="enc-input no-print"> <span>${e.leaveEncashment.toLocaleString()}</span></td>
+            <td class="num"><input type="number" value="${e.overtimeAmount!==e.autoOvertimeAmount||e.overtimeAmount>0?e.overtimeAmount:''}" placeholder="${e.autoOvertimeAmount.toLocaleString()}" onchange="updateOvertime('${e.name.replace(/'/g,"\\'")}', this.value)" class="ot-input no-print"> <span>${e.overtimeAmount.toLocaleString()}</span></td>
+            <td class="num highlight-blue" style="font-weight:700;">${e.netPayable.toLocaleString()}</td>
+        </tr>`;
+    });
+    
+    h += `<tr class="total-row">
+        <td colspan="2"><strong>TOTAL</strong></td>
+        <td class="num">${grandGross.toLocaleString()}</td>
+        <td class="num">${employees.reduce((s,e)=>s+e.tLateDed,0).toLocaleString()}</td>
+        <td class="num">${employees.reduce((s,e)=>s+e.tEarlyDed,0).toLocaleString()}</td>
+        <td class="num">${employees.reduce((s,e)=>s+(e.tShortfallDed||0),0).toLocaleString()}</td>
+        <td class="num">${employees.reduce((s,e)=>s+e.tAbsentDed,0).toLocaleString()}</td>
+        <td class="num">${grandDed.toLocaleString()}</td>
+        <td class="num">${grandEnc.toLocaleString()}</td>
+        <td class="num">${grandOT.toLocaleString()}</td>
+        <td class="num">${grandNet.toLocaleString()}</td>
+    </tr>`;
+    h += `<tr class="grand-row"><td colspan="10" style="text-align:right;"><strong>GRAND TOTAL:</strong></td><td class="num" style="font-size:0.9rem;">${grandNet.toLocaleString()}</td></tr></tbody></table></div></div></div>`;
+    
+    // ============================================
+    // CARD 2: ATTENDANCE SUMMARY (MINUTES & COUNTS)
+    // ============================================
+    h += `
+    <div class="card animate__animated animate__fadeIn" id="attendanceSummaryCard" style="margin-top:20px;">
+        <div class="card-header"><i class="fas fa-clock"></i> <strong>Attendance Summary (Minutes & Counts)</strong> <span style="font-weight:400;color:var(--muted);font-size:0.8rem;">| Late, Early, Absent, OT details</span></div>
+        <div class="card-body">
+            <div class="table-wrapper"><table><thead><tr>
+                <th>#</th><th>Employee</th><th>Late Min</th><th>Early Min</th><th>Short Min</th><th>Eff Min</th><th>OT Min</th><th>Present</th><th>Absent</th><th>Amb</th><th>Leave Eq.</th>
+            </tr></thead><tbody>`;
+    
+    employees.forEach((e,i)=>{
+        h += `<tr>
+            <td>${i+1}</td>
+            <td class="text-left">${e.name}</td>
+            <td class="num" style="color:#f59e0b;font-weight:600;">${e.tLateMin>0?e.tLateMin.toLocaleString():'-'}</td>
+            <td class="num" style="color:#3b82f6;font-weight:600;">${e.tEarlyMin>0?e.tEarlyMin.toLocaleString():'-'}</td>
+            <td class="num" style="color:#dc2626;font-weight:600;">${e.monthlyShortfallMin>0?e.monthlyShortfallMin.toLocaleString():'-'}</td>
+            <td class="num" style="color:#8b5cf6;font-weight:600;">${e.monthlyEffectiveMin>0?e.monthlyEffectiveMin.toLocaleString():'-'}</td>
+            <td class="num" style="color:#f97316;font-weight:600;">${e.totalOvertimeMin>0?e.totalOvertimeMin.toLocaleString():'-'}</td>
+            <td><span class="badge badge-present">${e.presentDays}</span></td>
+            <td><span class="badge badge-absent">${e.absentDays}</span></td>
+            <td><span class="badge badge-ambiguous">${e.ambiguousDays}</span></td>
+            <td class="num" style="color:#8b5cf6;font-weight:600;">${e.leaveEquivalent?e.leaveEquivalent.toFixed(2):'0.00'}</td>
+        </tr>`;
+    });
+    
+    h += `<tr class="total-row">
+        <td colspan="2"><strong>TOTAL</strong></td>
+        <td class="num">${grandLateMin.toLocaleString()}</td>
+        <td class="num">${grandEarlyMin.toLocaleString()}</td>
+        <td class="num">${grandShortMin.toLocaleString()}</td>
+        <td class="num">${grandEffMin.toLocaleString()}</td>
+        <td class="num">${totalOT.toLocaleString()}</td>
+        <td>${employees.reduce((s,e)=>s+e.presentDays,0)}</td>
+        <td>${employees.reduce((s,e)=>s+e.absentDays,0)}</td>
+        <td>${employees.reduce((s,e)=>s+e.ambiguousDays,0)}</td>
+        <td class="num">${grandLeaveEq.toFixed(2)}</td>
+    </tr></tbody></table></div></div></div>`;
+    
+    area.innerHTML = h;
+}
+
+    function renderDetailView(area, employees, preserveOpen = false) {
+        // Store currently open cards
+        const openCards = new Set();
+        if (preserveOpen) {
+            document.querySelectorAll('.emp-profile-card.open').forEach(card => {
+                openCards.add(card.id);
+            });
+        }
+        
+        let h = '';
+        employees.forEach((emp,idx)=>{
+            const pending = emp.pendingAbsent + emp.pendingAmbiguous;
+            const initials = emp.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+            const cardId = `emp-${idx}`;
+            const isOpen = openCards.has(cardId) ? ' open' : '';
+            
+            h += `<div class="emp-profile-card animate__animated animate__fadeIn ${isOpen}" id="${cardId}" style="animation-delay:${idx*0.03}s">
+                <div class="emp-profile-header" onclick="toggleProfileCard('${cardId}')">
+                    <div class="emp-info-row">
+                        <div class="emp-avatar">${initials}</div>
+                        <div><strong style="font-size:0.9rem;">${emp.name}</strong><br><small style="color:var(--muted);">${!emp.hasAttendance ? '⚠️ No Attendance' : 'Attendance Record'}</small></div>
+                        ${pending ? `<span class="pending-badge"><i class="fas fa-clock"></i> ${pending} Pending</span>` : ''}
+                    </div>
+                    <div class="emp-stats-row">
+                        <div class="stat-card green"><div class="stat-value">${emp.presentDays}</div><div class="stat-label">Present</div></div>
+                        <div class="stat-card red"><div class="stat-value">${emp.absentDays}</div><div class="stat-label">Absent</div></div>
+                        <div class="stat-card yellow"><div class="stat-value">${emp.ambiguousDays}</div><div class="stat-label">Amb</div></div>
+                        <div class="stat-card blue"><div class="stat-value">${emp.netPayable.toLocaleString()}</div><div class="stat-label">Net</div></div>
+                        <span class="arrow-icon"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                </div>
+                <div class="emp-profile-body">
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+                        <div class="stat-card purple"><div class="stat-value">${emp.grossSalary.toLocaleString()}</div><div class="stat-label">Gross</div></div>
+                        <div class="stat-card red"><div class="stat-value">${emp.totalDed.toLocaleString()}</div><div class="stat-label">Deductions</div></div>
+                        <div class="stat-card orange"><div class="stat-value">${emp.totalOvertimeMin} min</div><div class="stat-label">OT Minutes</div></div>
+                        <div class="stat-card"><div class="stat-value"><input type="number" value="${emp.overtimeAmount!==emp.autoOvertimeAmount||emp.overtimeAmount>0?emp.overtimeAmount:''}" placeholder="${emp.autoOvertimeAmount.toLocaleString()}" onchange="updateOvertime('${emp.name.replace(/'/g,"\\'")}', this.value)" class="ot-input no-print"> ${emp.overtimeAmount.toLocaleString()}</div><div class="stat-label">OT Amount</div></div>
+                        <div class="stat-card"><div class="stat-value">${emp.leaveEncashment.toLocaleString()}</div><div class="stat-label">Encashment</div></div>
+                        <div class="stat-card blue"><div class="stat-value" style="font-size:1.1rem;">${emp.netPayable.toLocaleString()}</div><div class="stat-label">Net Payable</div></div>
+                    </div>
+                    ${pending ? `<button class="btn btn-xs btn-success no-print" onclick="event.stopPropagation(); approveAll('${emp.name.replace(/'/g,"\\'")}')" style="margin-bottom:10px;"><i class="fas fa-check-double"></i> Approve All Pending (${pending})</button>` : ''}
+                    <div class="table-wrapper" style="max-height:280px;"><table><thead><tr>
+                        <th>Date</th><th>Case</th><th>Status</th><th>IN</th><th>OUT</th><th>Req</th><th>Work</th><th>Short</th><th>Eff</th><th>Late</th><th>Early</th><th>OT</th><th>×P</th><th>Late Rs</th><th>Early Rs</th><th>Short Rs</th><th>Absent</th><th>Total</th><th class="no-print">Action</th>
+                    </tr></thead><tbody>`;
+            emp.dailyResults.forEach(d => {
+                let act = '-'; 
+                if (d.orig === 'AMBIGUOUS') {
+                    act = `<select onchange="event.stopPropagation(); changeAmbiguousStatus('${emp.name.replace(/'/g,"\\'")}','${d.date}',this.value)" style="font-size:0.68rem;padding:3px 6px;border-radius:4px;cursor:pointer;" onclick="event.stopPropagation();">
+                        <option value="amb" ${!d.approved?'selected':''}>Amb</option>
+                        <option value="absent" ${d.approved?'selected':''}>Abs</option>
+                    </select>`; 
+                } else if (d.orig === 'ABSENT' && !d.approved) {
+                    act = `<button class="btn btn-xs btn-success" onclick="event.stopPropagation(); approveAbsent('${emp.name.replace(/'/g,"\\'")}','${d.date}')"><i class="fas fa-check"></i></button>`; 
+                } else if (d.orig === 'ABSENT' && d.approved) {
+                    act = '✅';
+                }
+                let rowBg = ''; 
+                if (d.status.includes('ABSENT')) rowBg = 'highlight-red'; 
+                else if (d.status === 'AMBIGUOUS') rowBg = 'highlight-yellow';
+                h += `<tr class="${rowBg}">
+    <td>${d.date}${d.isSaturday?' <span style="color:#8b5cf6;font-weight:700;">[SAT]</span>':''}</td>
+    <td>${d.caseNum||''}</td>
+    <td><span class="badge ${d.status.includes('ABSENT')?'badge-absent':d.status==='AMBIGUOUS'?'badge-ambiguous':d.status.includes('SAT')?'badge-late-early':d.status.includes('LATE')&&d.status.includes('EARLY')?'badge-late-early':d.status.includes('LATE')?'badge-late':d.status.includes('EARLY')?'badge-early':'badge-present'}">${d.status}</span></td>
+    <td>${d.inTime}</td><td>${d.outTime}</td>
+    <td>${d.reqMin}</td><td class="highlight-green">${d.workedMin}</td>
+    <td style="color:#dc2626;font-weight:600;">${d.shortfallMin||'-'}</td>
+    <td style="color:#8b5cf6;font-weight:600;">${d.effectiveDeductionMin||'-'}</td>
+    <td style="color:#dc2626;">${d.lateMin||'-'}</td>
+    <td style="color:#dc2626;">${d.earlyMin||'-'}</td>
+    <td style="color:#f97316;">${d.overtimeMin||'-'}</td>
+    <td class="${(d.pen>1)?'highlight-red':''}">×${d.pen}</td>
+    <td style="color:#dc2626;">${d.lateDed||0}</td>
+    <td style="color:#dc2626;">${d.earlyDed||0}</td>
+    <td style="color:#dc2626;font-weight:600;">${d.shortfallDed||0}</td>
+    <td style="color:#dc2626;">${d.absentDed||0}</td>
+    <td><strong>${d.totalDed}</strong></td>
+    <td class="no-print">${act}</td>
+</tr>`;
+            });
+            h += `</tbody></table></div></div></div>`;
+        });
+        area.innerHTML = h;
+    }
+
+    // New function to toggle profile cards without losing state
+    function toggleProfileCard(cardId) {
+        const card = document.getElementById(cardId);
+        if (card) {
+            card.classList.toggle('open');
+        }
+    }
+
+    function printSalarySheet() { printMode='salary'; renderResults(); setTimeout(()=>{ window.print(); printMode=null; renderResults(); },300); }
+    function printDetailView() { printMode='detail'; renderResults(); setTimeout(()=>{ window.print(); printMode=null; renderResults(); },300); }
+    function exportSalarySheet() { 
+        let csv = 'Employee,Gross,Req Min,Work Min,OT Min,Present,Absent,Ambiguous,Late Ded,Early Ded,Absent Ded,Total Ded,Encashment,OT Amount,Net Payable\n'; 
+        allResults.forEach(e => csv += `"${e.name}",${e.grossSalary},${e.totalRequiredMin},${e.totalWorkedMin},${e.totalOvertimeMin},${e.presentDays},${e.absentDays},${e.ambiguousDays},${e.tLateDed},${e.tEarlyDed},${e.tAbsentDed},${e.totalDed},${e.leaveEncashment},${e.overtimeAmount},${e.netPayable}\n`); 
+        downloadCSV(csv, 'AttendPay_Pro_Salary.csv'); 
+    }
+    function downloadCSV(csv, filename) { 
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv' }); 
+        const a = document.createElement('a'); 
+        a.href = URL.createObjectURL(blob); 
+        a.download = filename; 
+        a.click(); 
+    }
+
+    // Expose toggleProfileCard to global scope
+    window.toggleProfileCard = toggleProfileCard;
+</script>
+</body>
+</html>
